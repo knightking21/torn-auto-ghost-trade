@@ -18,7 +18,7 @@
 
   // Configuration
   const CONFIG = {
-    userID: 0000001, // 🔁 Replace this with the actual user ID to trade with
+    userID: 3690608, // 🔁 Replace this with the actual user ID to trade with
     storageKey: 'ghostTradeAmount',
     defaultDescription: 'Auto Ghost Trade',
     maxWaitTime: 10000, // 10 seconds
