@@ -9,6 +9,8 @@
 // @match    		 https://www.torn.com/*
 // @grant    		 none
 // @run-at   		 document-end
+// @downloadURL  https://update.greasyfork.org/scripts/535556/Auto%20Ghost%20Trader.user.js
+// @updateURL    https://update.greasyfork.org/scripts/535556/Auto%20Ghost%20Trader.meta.js
 // ==/UserScript==
 
 (function () {
