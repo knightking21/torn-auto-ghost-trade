@@ -2,7 +2,7 @@
 // @name     		TopAreaNav
 // @namespace   top.areaNav
 // @version  		1.1.1
-// @description Places Area Navigation Menu on top
+// @description Moves the Area Navigation Menu on top
 // @grant    		none
 // @run-at   		document-end
 // @match    		https://www.torn.com/*
