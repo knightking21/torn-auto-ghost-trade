@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name     		TopAreaNav
 // @namespace   top.areaNav
-// @version  		1.2.0
+// @version  		1.2.1
 // @description Moves the Area Navigation Menu to the top
 // @grant    		none
 // @run-at   		document-end
@@ -10,8 +10,9 @@
 // @license  		Private to AndersAngstrom [3690608] – cannot be used or duplicated in any form
 // @icon     		https://www.google.com/s2/favicons?sz=64&domain=torn.com
 // @downloadURL https://update.greasyfork.org/scripts/535614/TopAreaNav.user.js
-// @updateURL 	https://update.greasyfork.org/scripts/535614/TopAreaNav.meta.js
+// @updateURL https://update.greasyfork.org/scripts/535614/TopAreaNav.meta.js
 // ==/UserScript==
+
 
 (() => {
   'use strict';
@@ -23,7 +24,10 @@
     arrowColor: 'white',     // Color of arrow text
     borderColor: '#000',     // Border color between nav elements
     buttonBgColor: '#1a1a1a', // Background color for arrow buttons
-    safetyTimeout: 10000     // Maximum time to wait for elements before stopping observation (ms)
+    safetyTimeout: 10000,    // Maximum time to wait for elements before stopping observation (ms)
+    stickyPosition: 'top',   // Where to stick the navigation ('top' or 'bottom')
+    stickyZIndex: 999,       // Z-index for sticky navigation
+    stickyBackground: '#222' // Background color for sticky navigation
   };
   
   // Create the UI components once the target element is found
@@ -80,11 +84,29 @@
     const parentContainer = document.createElement('div');
     Object.assign(parentContainer.style, {
       position: 'relative',
-      //marginTop: '2px',
       width: '100%',
       display: 'flex',
       alignItems: 'center',
-      gap: '8px'
+      gap: '8px',
+      padding: '8px 0',
+      boxSizing: 'border-box'
+    });
+    
+    // Create outer wrapper for sticky positioning
+    const stickyWrapper = document.createElement('div');
+    Object.assign(stickyWrapper.style, {
+      width: '100%',
+      backgroundColor: config.stickyBackground,
+      padding: '4px 10px',
+      boxSizing: 'border-box'
+    });
+    
+    // Apply sticky positioning
+    Object.assign(stickyWrapper.style, {
+      position: 'sticky',
+      [config.stickyPosition]: '0',
+      zIndex: config.stickyZIndex.toString(),
+      boxShadow: '0 2px 4px rgba(0,0,0,0.3)'
     });
     
     // Create navigation arrows with improved styling
@@ -145,15 +167,51 @@
     parentContainer.appendChild(clonedContent);
     parentContainer.appendChild(rightArrow);
     
+    stickyWrapper.appendChild(parentContainer);
+    
     // Add the custom navigation to the page
     const targetElement = document.querySelector('.content');
     if (targetElement) {
-      targetElement.insertAdjacentElement('beforebegin', parentContainer);
+      // Handle placeholder for sticky positioning
+      const placeholderDiv = document.createElement('div');
+      let originalHeight = 0;
+      
+      // Store the original height before making sticky
+      originalHeight = parentContainer.offsetHeight;
+      
+      // Add the stickyWrapper to the page
+      targetElement.insertAdjacentElement('beforebegin', stickyWrapper);
       
       // Hide the original wrapper to avoid duplication
       wrapper.style.display = 'none';
       
-      // Add keyboard navigation support with cross-browser event handling
+      // Add scroll tracking to enhance sticky visual effect
+      // Add class for CSS-based sticky support
+      stickyWrapper.classList.add('torn-nav-sticky');
+      
+      // Function to handle scroll events
+      const handleScroll = () => {
+        if (window.scrollY > 10) {
+          stickyWrapper.classList.add('scrolled');
+        } else {
+          stickyWrapper.classList.remove('scrolled');
+        }
+      };
+      
+      // Add scroll event listener with performance optimization
+      let ticking = false;
+      window.addEventListener('scroll', () => {
+        if (!ticking) {
+          window.requestAnimationFrame(() => {
+            handleScroll();
+            ticking = false;
+          });
+          ticking = true;
+        }
+      }, { passive: true });
+      
+      // Initial call to set the correct state
+      handleScroll();
       const handleKeydown = (e) => {
         // Get the event object in a cross-browser way
         const event = e || window.event;
@@ -266,6 +324,31 @@
       @media screen and (-webkit-min-device-pixel-ratio: 0) {
         .custom-scrollbar {
           overflow-y: overlay;
+        }
+      }
+      
+      /* Sticky navigation styles */
+      @supports ((position: -webkit-sticky) or (position: sticky)) {
+        .torn-nav-sticky {
+          position: -webkit-sticky;
+          position: sticky;
+          top: 0;
+          z-index: 999;
+        }
+      }
+      
+      /* Transition effects for sticky state */
+      .torn-nav-sticky {
+        transition: box-shadow 0.3s ease;
+      }
+      .torn-nav-sticky.scrolled {
+        box-shadow: 0 3px 10px rgba(0,0,0,0.5);
+      }
+      
+      /* Responsive adjustments */
+      @media screen and (max-width: 768px) {
+        .torn-nav-toggle-btn {
+          display: block !important;
         }
       }
     `;
