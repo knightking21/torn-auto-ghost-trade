@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name     		TopAreaNav
 // @namespace   top.areaNav
-// @version  		1.1.0
+// @version  		1.1.1
 // @description Places Area Navigation Menu on top
 // @grant    		none
 // @run-at   		document-end
@@ -9,6 +9,8 @@
 // @author   		AndersAngstrom [3690608]
 // @license  		Private to AndersAngstrom [3690608] – cannot be used or duplicated in any form
 // @icon     		https://www.google.com/s2/favicons?sz=64&domain=torn.com
+// @downloadURL https://update.greasyfork.org/scripts/535614/TopAreaNav.user.js
+// @updateURL 	https://update.greasyfork.org/scripts/535614/TopAreaNav.meta.js
 // ==/UserScript==
 
 (() => {
