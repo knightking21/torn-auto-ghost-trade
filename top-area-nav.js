@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name     		TopAreaNav
 // @namespace   top.areaNav
-// @version  		1.2.1
+// @version  		1.2.2
 // @description Moves the Area Navigation Menu to the top
 // @grant    		none
 // @run-at   		document-end
@@ -23,12 +23,114 @@
     arrowWidth: '24px',      // Width of navigation arrows
     arrowColor: 'white',     // Color of arrow text
     borderColor: '#000',     // Border color between nav elements
-    buttonBgColor: '#1a1a1a', // Background color for arrow buttons
+    buttonBgColor: '#222', // Background color for arrow buttons
     safetyTimeout: 10000,    // Maximum time to wait for elements before stopping observation (ms)
     stickyPosition: 'top',   // Where to stick the navigation ('top' or 'bottom')
     stickyZIndex: 999,       // Z-index for sticky navigation
-    stickyBackground: '#222' // Background color for sticky navigation
+    stickyBackground: '#222', // Background color for sticky navigation
+    toggleBtnColor: '#222', // Background color for toggle button
+    toggleTextColor: 'white', // Text color for toggle button
+    storageKey: 'topAreaNavSticky' // Local storage key to remember the toggle state
   };
+  
+  // Get the toggle state from localStorage or default to enabled
+  const isNavigationEnabled = () => {
+    const storedValue = localStorage.getItem(config.storageKey);
+    return storedValue === null ? true : storedValue === 'true';
+  };
+  
+  // Toggle the navigation state
+  const toggleNavigation = (stickyWrapper) => {
+    const currentState = isNavigationEnabled();
+    const newState = !currentState;
+    
+    // Update local storage
+    localStorage.setItem(config.storageKey, newState);
+    
+    // Update UI
+    if (stickyWrapper) {
+      updateNavigationVisibility(stickyWrapper, newState);
+    }
+    
+    return newState;
+  };
+  
+  // Update the visibility of the navigation based on state
+  const updateNavigationVisibility = (stickyWrapper, isEnabled) => {
+    if (isEnabled) {
+      // Enable sticky navigation
+      stickyWrapper.style.position = 'sticky';
+      stickyWrapper.classList.add('torn-nav-sticky');
+    } else {
+      // Disable sticky navigation but keep visible when scrolled to top
+      stickyWrapper.style.position = 'static';
+      stickyWrapper.classList.remove('torn-nav-sticky');
+    }
+    
+    // Update toggle button text if it exists
+    const toggleBtn = document.getElementById('torn-nav-toggle');
+    if (toggleBtn) {
+      toggleBtn.textContent = isEnabled ? '📌' : '📍';
+      toggleBtn.title = isEnabled ? 'Unpin' : 'Pin';
+    }
+  };
+  
+  // Create "Go to Top" button
+	const createGoToTopButton = () => {
+  	const goToTopBtn = document.createElement('button');
+  	goToTopBtn.id = 'torn-nav-top-btn';
+  	goToTopBtn.setAttribute('type', 'button');
+  	goToTopBtn.setAttribute('aria-label', 'Go to top of page');
+  	goToTopBtn.title = 'Go to top of page';
+  
+  	// Style the button
+  	Object.assign(goToTopBtn.style, {
+    	cursor: 'pointer',
+    	width: '50px',
+    	height: '42px',
+    	padding: '0',
+    	margin: '0 0 0 4px',
+    	//backgroundColor: config.buttonBgColor,
+    	border: 'none',
+    	borderRadius: '4px',
+    	display: 'inline-flex',
+    	alignItems: 'center',
+    	justifyContent: 'center',
+    	userSelect: 'none',
+    	backgroundImage: 'url(https://www.torn.com/images/v2/svg_icons/globals/go_to_top.svg)',
+      backgroundPosition: '-4px -4px',
+      backgroundRepeat: 'no-repeat',
+      filter: 'invert(100%) brightness(50%)',
+    	opacity: '1',
+      cursor: 'not-allowed',
+  	});
+  
+  	// Add click event listener
+  	goToTopBtn.addEventListener('click', () => {
+      if (window.scrollY > 300) {
+    		window.scrollTo({
+      		top: 0,
+      		behavior: 'smooth'
+         });
+       }
+  	});
+  
+  	// Show/hide button based on scroll position
+  	window.addEventListener('scroll', () => {
+    	if (window.scrollY > 300) {
+      	//goToTopBtn.style.opacity = '1';
+      	goToTopBtn.style.backgroundPosition = '-4px -54px';
+        goToTopBtn.style.filter = 'invert(100%) brightness(100%)';
+        goToTopBtn.style.cursor = 'pointer';
+    	} else {
+      	goToTopBtn.style.backgroundPosition = '-4px -4px';
+        goToTopBtn.style.filter = 'invert(100%) brightness(50%)';
+      	goToTopBtn.style.cursor = 'not-allowed';
+    	}
+  	}, { passive: true });
+  
+  	return goToTopBtn;
+	};
   
   // Create the UI components once the target element is found
   const setupNavigationUI = () => {
@@ -51,6 +153,12 @@
       scrollbarWidth: 'thin', // Firefox
       WebkitOverflowScrolling: 'touch' // Smooth scrolling for iOS Safari
     });
+    
+    //Clone the "Go to Top" Button
+    const goTop = document.querySelector('#go-to-top-btn-root')
+    if (!goTop) return false;
+    
+    const goToTopBtn = createGoToTopButton();
     
     // Hide the scrollbar in WebKit browsers while keeping functionality
     clonedContent.classList.add('custom-scrollbar');
@@ -101,13 +209,24 @@
       boxSizing: 'border-box'
     });
     
-    // Apply sticky positioning
+    // Apply sticky positioning based on current toggle state
+    const isEnabled = isNavigationEnabled();
     Object.assign(stickyWrapper.style, {
-      position: 'sticky',
-      [config.stickyPosition]: '0',
+      width: '100%',
+      backgroundColor: config.stickyBackground,
+      padding: '4px 10px',
+      boxSizing: 'border-box',
+      boxShadow: '0 2px 4px rgba(0,0,0,0.3)',
       zIndex: config.stickyZIndex.toString(),
-      boxShadow: '0 2px 4px rgba(0,0,0,0.3)'
+      [config.stickyPosition]: '0'
     });
+    
+    if (isEnabled) {
+      stickyWrapper.style.position = 'sticky';
+      stickyWrapper.classList.add('torn-nav-sticky');
+    } else {
+      stickyWrapper.style.position = 'static';
+    }
     
     // Create navigation arrows with improved styling
     const createArrowButton = (text, direction) => {
@@ -130,7 +249,7 @@
         alignItems: 'center',
         justifyContent: 'center',
         padding: '0',
-        fontSize: '16px',
+        fontSize: '24px',
         fontWeight: 'bold',
         userSelect: 'none',      // Prevent text selection
         WebkitUserSelect: 'none', // Safari
@@ -143,16 +262,16 @@
       // Add click event listener
       button.addEventListener('click', () => {
         // Cross-browser smooth scrolling
-      if ('scrollBehavior' in document.documentElement.style) {
-        // Modern browsers that support smooth scrolling
-        clonedContent.scrollBy({
-          left: direction * config.scrollAmount,
-          behavior: 'smooth'
-        });
-      } else {
-        // Fallback for browsers that don't support ScrollToOptions with behavior
-        smoothScrollPolyfill(clonedContent, direction * config.scrollAmount);
-      }
+        if ('scrollBehavior' in document.documentElement.style) {
+          // Modern browsers that support smooth scrolling
+          clonedContent.scrollBy({
+            left: direction * config.scrollAmount,
+            behavior: 'smooth'
+          });
+        } else {
+          // Fallback for browsers that don't support ScrollToOptions with behavior
+          smoothScrollPolyfill(clonedContent, direction * config.scrollAmount);
+        }
       });
       
       return button;
@@ -162,34 +281,80 @@
     const leftArrow = createArrowButton('◀', -1);
     const rightArrow = createArrowButton('▶', 1);
     
+    // Create toggle button
+    const toggleBtn = document.createElement('button');
+    toggleBtn.id = 'torn-nav-toggle';
+    toggleBtn.textContent = isEnabled ? '📌' : '📍';
+    toggleBtn.title = isEnabled ? 'Unpin' : 'Pin';
+    toggleBtn.setAttribute('type', 'button');
+    toggleBtn.setAttribute('aria-label', 'Toggle sticky navigation');
+    
+    // Style the toggle button
+    Object.assign(toggleBtn.style, {
+      cursor: 'pointer',
+      padding: '8px',
+      margin: '0 0 0 4px',
+      backgroundColor: config.toggleBtnColor,
+      color: config.toggleTextColor,
+      border: 'none',
+      borderRadius: '4px',
+      fontSize: '18px',
+      fontWeight: 'bold',
+      display: 'inline-flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
+      userSelect: 'none',      // Prevent text selection
+      WebkitUserSelect: 'none', // Safari
+      MozUserSelect: 'none',    // Firefox
+      msUserSelect: 'none',     // IE/Edge
+    });
+    
+    // Add click event listener to toggle button
+    toggleBtn.addEventListener('click', () => {
+      toggleNavigation(stickyWrapper);
+    });
+    
+    // Create a container for right-side elements (right arrow + toggle button)
+    const leftSideContainer = document.createElement('div');
+    Object.assign(leftSideContainer.style, {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '4px',
+    });
+    
+    leftSideContainer.appendChild(goToTopBtn);
+    leftSideContainer.appendChild(leftArrow);
+    
+    const rightSideContainer = document.createElement('div');
+    Object.assign(rightSideContainer.style, {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '4px',
+    });
+    
+    rightSideContainer.appendChild(rightArrow);
+    rightSideContainer.appendChild(toggleBtn);
+    
+    
     // Assemble the components
-    parentContainer.appendChild(leftArrow);
+    parentContainer.appendChild(leftSideContainer);
     parentContainer.appendChild(clonedContent);
-    parentContainer.appendChild(rightArrow);
+    parentContainer.appendChild(rightSideContainer);
     
     stickyWrapper.appendChild(parentContainer);
     
     // Add the custom navigation to the page
     const targetElement = document.querySelector('.content');
     if (targetElement) {
-      // Handle placeholder for sticky positioning
-      const placeholderDiv = document.createElement('div');
-      let originalHeight = 0;
-      
-      // Store the original height before making sticky
-      originalHeight = parentContainer.offsetHeight;
-      
       // Add the stickyWrapper to the page
       targetElement.insertAdjacentElement('beforebegin', stickyWrapper);
       
-      // Hide the original wrapper to avoid duplication
+      // Hide the original wrapper and go-to-btn to avoid duplication
       wrapper.style.display = 'none';
+      goTop.style.display = 'none';
       
       // Add scroll tracking to enhance sticky visual effect
-      // Add class for CSS-based sticky support
-      stickyWrapper.classList.add('torn-nav-sticky');
-      
-      // Function to handle scroll events
       const handleScroll = () => {
         if (window.scrollY > 10) {
           stickyWrapper.classList.add('scrolled');
@@ -212,37 +377,8 @@
       
       // Initial call to set the correct state
       handleScroll();
-      const handleKeydown = (e) => {
-        // Get the event object in a cross-browser way
-        const event = e || window.event;
-        const key = event.key || event.keyCode;
-        
-        // Only handle keyboard events when our element is visible
-        if (parentContainer.offsetParent !== null) {
-          // Check for arrow keys by key name or keyCode (for older browsers)
-          if (key === 'ArrowLeft' || key === 'Left' || key === 37) {
-            leftArrow.click();
-            // Prevent default browser scrolling behavior
-            if (event.preventDefault) event.preventDefault();
-            return false;
-          } else if (key === 'ArrowRight' || key === 'Right' || key === 39) {
-            rightArrow.click();
-            // Prevent default browser scrolling behavior
-            if (event.preventDefault) event.preventDefault();
-            return false;
-          }
-        }
-      };
       
-      // Add event listener with cross-browser support
-      if (document.addEventListener) {
-        document.addEventListener('keydown', handleKeydown, false);
-      } else if (document.attachEvent) {
-        // For older IE versions
-        document.attachEvent('onkeydown', handleKeydown);
-      }
-      
-      // Also add touch swipe support for mobile browsers
+      // Add touch swipe support for mobile browsers
       let touchStartX = 0;
       let touchEndX = 0;
       
@@ -350,6 +486,20 @@
         .torn-nav-toggle-btn {
           display: block !important;
         }
+      }
+      
+      /* Toggle button styles */
+      #torn-nav-toggle {
+        transition: background-color 0.2s ease;
+      }
+      
+      #torn-nav-toggle:hover {
+        background-color: #333333;
+      }
+      
+      /* Highlight when navigation is sticky */
+      #torn-nav-toggle.active {
+        box-shadow: 0 0 0 2px rgba(255,255,255,0.3);
       }
     `;
     document.head.appendChild(style);
