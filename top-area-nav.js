@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name     		TopAreaNav
 // @namespace   top.areaNav
-// @version  		1.1.1
-// @description Moves the Area Navigation Menu on top
+// @version  		1.2.0
+// @description Moves the Area Navigation Menu to the top
 // @grant    		none
 // @run-at   		document-end
 // @match    		https://www.torn.com/*
